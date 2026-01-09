@@ -15,9 +15,15 @@ import com.example.reflexgame.game.GameObject
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import android.widget.Toast
+import androidx.compose.ui.platform.LocalContext
+import androidx.navigation.NavController
+import com.example.reflexgame.navigation.Screen
+
 
 @Composable
 fun ReflexRushScreen(
+    navController: NavController,
     gameViewModel: GameViewModel = viewModel()
 ) {
 
@@ -26,10 +32,25 @@ fun ReflexRushScreen(
     val score by gameViewModel.score.collectAsState()
     val accuracy by gameViewModel.accuracy.collectAsState()
     val gameOver by gameViewModel.gameOver.collectAsState()
-
+    val context = LocalContext.current
     LaunchedEffect(Unit) {
         gameViewModel.startGame()
     }
+
+    LaunchedEffect(gameOver) {
+        if (gameOver) {
+            Toast.makeText(
+                context,
+                "Score submitted!",
+                Toast.LENGTH_SHORT
+            ).show()
+
+            navController.navigate(Screen.Leaderboard.route) {
+                popUpTo(Screen.Game.route) { inclusive = true }
+            }
+        }
+    }
+
 
     Box(
         modifier = Modifier

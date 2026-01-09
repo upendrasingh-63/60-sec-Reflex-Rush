@@ -19,10 +19,10 @@ class LeaderboardViewModel : ViewModel() {
     val error: StateFlow<String?> = _error
 
     init {
-        fetchLeaderboard()
+        fetchLeaderboardSafely()
     }
 
-    private fun fetchLeaderboard() {
+    private fun fetchLeaderboardSafely() {
         viewModelScope.launch {
             try {
                 _loading.value = true

@@ -9,6 +9,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlin.random.Random
+import com.example.reflexgame.network.RetrofitClient
+import com.example.reflexgame.network.ScoreRequest
+
 
 class GameViewModel : ViewModel() {
 
@@ -35,6 +38,8 @@ class GameViewModel : ViewModel() {
 
     private val _objects = MutableStateFlow<List<GameObject>>(emptyList())
     val objects = _objects.asStateFlow()
+
+    private var scoreSubmitted = false
 
     private var objectIdCounter = 0
 
@@ -111,6 +116,7 @@ class GameViewModel : ViewModel() {
     private fun endGame() {
         _gameOver.value = true
         updateStats()
+        submitScoreOnce()
     }
 
     private fun resetGame() {
@@ -122,5 +128,28 @@ class GameViewModel : ViewModel() {
         _accuracy.value = 0
         _gameOver.value = false
         _objects.value = emptyList()
+        scoreSubmitted = false
     }
+    private fun submitScoreOnce() {
+        if (scoreSubmitted) return
+        scoreSubmitted = true
+
+        val finalScore = gameEngine.calculateScore()
+        val finalAccuracy = gameEngine.calculateAccuracy()
+
+        viewModelScope.launch {
+            try {
+                RetrofitClient.api.submitScore(
+                    ScoreRequest(
+                        score = finalScore,
+                        accuracy = finalAccuracy
+                    )
+                )
+            } catch (e: Exception) {
+                // Log only — do NOT crash game
+                e.printStackTrace()
+            }
+        }
+    }
+
 }

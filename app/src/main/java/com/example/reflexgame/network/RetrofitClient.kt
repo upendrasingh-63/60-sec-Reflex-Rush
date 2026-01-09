@@ -10,7 +10,7 @@ object RetrofitClient {
     // ⚠️ IMPORTANT:
     // Emulator → http://10.0.2.2:5000/
     // Real phone → http://YOUR_IP:5000/
-    private const val BASE_URL = "http://192.168.31.11:5000/"
+    private const val BASE_URL = "http://192.168.235.179:5000/"
 
     private val logging = HttpLoggingInterceptor().apply {
         level = HttpLoggingInterceptor.Level.BODY

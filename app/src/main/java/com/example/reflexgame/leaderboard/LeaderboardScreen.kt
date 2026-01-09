@@ -26,6 +26,15 @@ fun LeaderboardScreen(
             .padding(50.dp)
     ) {
 
+        Text(
+            text = "🌍 Global Leaderboard",
+            color = Color.White,
+            style = MaterialTheme.typography.headlineLarge,
+            modifier = Modifier
+                .align(Alignment.CenterHorizontally)
+                .padding(bottom = 24.dp)
+        )
+
         val leaderboard by viewModel.leaderboard.collectAsState()
         val loading by viewModel.loading.collectAsState()
         val error by viewModel.error.collectAsState()
