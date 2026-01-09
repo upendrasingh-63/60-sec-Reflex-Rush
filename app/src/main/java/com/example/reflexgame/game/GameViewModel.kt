@@ -1,22 +1,25 @@
 package com.example.reflexgame.game
 
-
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.reflexrush.game.GameEngine
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlin.random.Random
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-
-
+import kotlin.random.Random
 
 class GameViewModel : ViewModel() {
 
     private val gameEngine = GameEngine()
     private val timerManager = TimerManager(60)
+
+    private var maxX = 0
+    private var maxY = 0
+
+    private val OBJECT_LIFETIME = 800L
+    private val SPAWN_INTERVAL = 500L
 
     private val _remainingTime = MutableStateFlow(60)
     val remainingTime: StateFlow<Int> = _remainingTime
@@ -27,62 +30,78 @@ class GameViewModel : ViewModel() {
     private val _accuracy = MutableStateFlow(0)
     val accuracy: StateFlow<Int> = _accuracy
 
-    private val OBJECT_LIFETIME = 800L // milliseconds
-
     private val _gameOver = MutableStateFlow(false)
     val gameOver: StateFlow<Boolean> = _gameOver
 
-    private val _currentObject = MutableStateFlow<GameObject?>(null)
-    val currentObject = _currentObject.asStateFlow()
+    private val _objects = MutableStateFlow<List<GameObject>>(emptyList())
+    val objects = _objects.asStateFlow()
 
+    private var objectIdCounter = 0
+
+    fun updateBounds(maxWidth: Int, maxHeight: Int) {
+        maxX = maxWidth
+        maxY = maxHeight
+    }
 
     fun startGame() {
         resetGame()
 
+        // Start spawning objects
+        viewModelScope.launch {
+            while (!_gameOver.value) {
+                spawnObject()
+                delay(SPAWN_INTERVAL)
+            }
+        }
+
+        // Start timer
         timerManager.startTimer(
             scope = viewModelScope,
-            onTick = { time ->
-                _remainingTime.value = time
-            },
-            onFinish = {
-                endGame()
-            }
+            onTick = { _remainingTime.value = it },
+            onFinish = { endGame() }
         )
-        generateNewObject()
     }
 
-    private fun generateNewObject() {
-        viewModelScope.launch {
-            val isCorrect = kotlin.random.Random.nextBoolean()
-            _currentObject.value = GameObject(isCorrect)
+    private fun spawnObject() {
+        if (maxX == 0 || maxY == 0) return
 
+        val objectSize = 120 // must match UI size
+
+        val newObject = GameObject(
+            id = objectIdCounter++,
+            isCorrect = Random.nextBoolean(),
+            x = Random.nextInt(0, maxX - objectSize),
+            y = Random.nextInt(200, maxY - objectSize) // 200px reserved for HUD
+        )
+
+        _objects.value += newObject
+        handleObjectLifetime(newObject)
+    }
+
+
+    private fun handleObjectLifetime(obj: GameObject) {
+        viewModelScope.launch {
             delay(OBJECT_LIFETIME)
 
-            // If object still exists and it was GREEN, user missed it
-            if (_currentObject.value?.isCorrect == true && !_gameOver.value) {
-                gameEngine.onMissedCorrectObject()
-                updateStats()
-            }
-
-            if (!_gameOver.value) {
-                generateNewObject()
+            if (_objects.value.contains(obj) && !_gameOver.value) {
+                // Missed GREEN object → penalty
+                if (obj.isCorrect) {
+                    gameEngine.onMissedCorrectObject()
+                    updateStats()
+                }
+                _objects.value -= obj
             }
         }
     }
 
-    fun onUserTap() {
+    fun onObjectTapped(obj: GameObject) {
         if (_gameOver.value) return
-
-        val obj = _currentObject.value ?: return
 
         gameEngine.onUserTap(obj.isCorrect)
         updateStats()
 
-        // Remove current object immediately
-        _currentObject.value = null
+        _objects.value -= obj
     }
-
-
 
     private fun updateStats() {
         _score.value = gameEngine.calculateScore()
@@ -102,8 +121,6 @@ class GameViewModel : ViewModel() {
         _score.value = 0
         _accuracy.value = 0
         _gameOver.value = false
+        _objects.value = emptyList()
     }
-
 }
-
-

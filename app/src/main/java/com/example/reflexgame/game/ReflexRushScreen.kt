@@ -11,6 +11,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.IntOffset
+import com.example.reflexgame.game.GameObject
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 
@@ -20,7 +22,7 @@ fun ReflexRushScreen(
 ) {
 
     val time by gameViewModel.remainingTime.collectAsState()
-    val gameObject by gameViewModel.currentObject.collectAsState()
+    val objects by gameViewModel.objects.collectAsState()
     val score by gameViewModel.score.collectAsState()
     val accuracy by gameViewModel.accuracy.collectAsState()
     val gameOver by gameViewModel.gameOver.collectAsState()
@@ -47,8 +49,13 @@ fun ReflexRushScreen(
                 time = time,
                 score = score,
                 accuracy = accuracy,
-                gameObject = gameObject,
-                onTap = { gameViewModel.onUserTap() }
+                objects = objects,
+                onObjectTap = { obj ->
+                    gameViewModel.onObjectTapped(obj)
+                },
+                onBoundsReady = { width, height ->
+                    gameViewModel.updateBounds(width, height)
+                }
             )
         }
     }
@@ -60,9 +67,11 @@ fun GamePlayScreen(
     time: Int,
     score: Int,
     accuracy: Int,
-    gameObject: GameObject?,
-    onTap: () -> Unit
+    objects: List<GameObject>,
+    onObjectTap: (GameObject) -> Unit,
+    onBoundsReady: (Int, Int) -> Unit
 ) {
+
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
@@ -70,20 +79,15 @@ fun GamePlayScreen(
     ) {
         val maxWidth = constraints.maxWidth
         val maxHeight = constraints.maxHeight
-
-        // Random position remembered per object
-        val offsetX = remember(gameObject) {
-            (0..(maxWidth - 120)).random()
-        }
-        val offsetY = remember(gameObject) {
-            (200..(maxHeight - 120)).random()
+        LaunchedEffect(maxWidth, maxHeight) {
+            onBoundsReady(maxWidth, maxHeight)
         }
 
         // Top HUD
         Column(
             modifier = Modifier
                 .align(Alignment.TopCenter)
-                .padding(top = 16.dp),
+                .padding(top = 50.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text("Time: $time", color = Color.White)
@@ -91,21 +95,21 @@ fun GamePlayScreen(
             Text("Accuracy: $accuracy%", color = Color.Cyan)
         }
 
-        // 🎯 Random Object
-        if (gameObject != null) {
+        // 🎯 MULTIPLE OBJECTS
+        objects.forEach { obj ->
             Box(
                 modifier = Modifier
-                    .offset { IntOffset(offsetX, offsetY) }
+                    .offset { IntOffset(obj.x, obj.y) }
                     .size(120.dp)
                     .background(
-                        color = if (gameObject.isCorrect) Color.Green else Color.Red,
+                        color = if (obj.isCorrect) Color.Green else Color.Red,
                         shape = CircleShape
                     )
-                    .clickable { onTap() },
+                    .clickable { onObjectTap(obj) },
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = if (gameObject.isCorrect) "HIT" else "AVOID",
+                    text = if (obj.isCorrect) "HIT" else "AVOID",
                     color = Color.Black,
                     style = MaterialTheme.typography.headlineSmall
                 )
@@ -113,6 +117,7 @@ fun GamePlayScreen(
         }
     }
 }
+
 
 
 @Composable
