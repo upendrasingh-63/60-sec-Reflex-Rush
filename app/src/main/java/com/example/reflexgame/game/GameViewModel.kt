@@ -43,6 +43,8 @@ class GameViewModel : ViewModel() {
 
     private var objectIdCounter = 0
 
+    lateinit var username: String
+
     fun updateBounds(maxWidth: Int, maxHeight: Int) {
         maxX = maxWidth
         maxY = maxHeight
@@ -141,6 +143,7 @@ class GameViewModel : ViewModel() {
             try {
                 RetrofitClient.api.submitScore(
                     ScoreRequest(
+                        username = username,
                         score = finalScore,
                         accuracy = finalAccuracy
                     )

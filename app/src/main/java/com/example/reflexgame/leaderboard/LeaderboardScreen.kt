@@ -82,6 +82,11 @@ fun LeaderboardItem(entry: LeaderboardEntry) {
             color = Color.Yellow,
             style = MaterialTheme.typography.bodyLarge
         )
+        Text(
+            text = entry.username,
+            color = Color.White,
+            style = MaterialTheme.typography.bodyLarge
+        )
 
         Text(
             text = "Score: ${entry.score}",

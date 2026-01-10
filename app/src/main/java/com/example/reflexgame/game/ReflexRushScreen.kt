@@ -19,6 +19,7 @@ import android.widget.Toast
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavController
 import com.example.reflexgame.navigation.Screen
+import com.example.reflexgame.user.UserManager
 
 
 @Composable
@@ -33,7 +34,12 @@ fun ReflexRushScreen(
     val accuracy by gameViewModel.accuracy.collectAsState()
     val gameOver by gameViewModel.gameOver.collectAsState()
     val context = LocalContext.current
+    val username = remember {
+        UserManager.getOrCreateUsername(context)
+    }
+
     LaunchedEffect(Unit) {
+        gameViewModel.username = username
         gameViewModel.startGame()
     }
 
@@ -67,6 +73,7 @@ fun ReflexRushScreen(
             )
         } else {
             GamePlayScreen(
+                username = username,
                 time = time,
                 score = score,
                 accuracy = accuracy,
@@ -85,6 +92,7 @@ fun ReflexRushScreen(
 
 @Composable
 fun GamePlayScreen(
+    username: String,
     time: Int,
     score: Int,
     accuracy: Int,
@@ -111,6 +119,11 @@ fun GamePlayScreen(
                 .padding(top = 50.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            Text(
+                text = "👤 $username",
+                color = Color.White,
+                style = MaterialTheme.typography.bodyLarge
+            )
             Text("Time: $time", color = Color.White)
             Text("Score: $score", color = Color.Green)
             Text("Accuracy: $accuracy%", color = Color.Cyan)
