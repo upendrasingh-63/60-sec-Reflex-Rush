@@ -8,9 +8,12 @@ export async function getTopScores(req, res) {
 
         const leaderboard = topScores.map((entry, index) => ({
             rank: index + 1,
+            username: entry.username,
             score: entry.score,
-            accuracy: entry.accuracy,
+            accuracy: entry.accuracy
         }));
+
+        console.log(leaderboard);
 
         res.json(leaderboard);
     } catch (error) {

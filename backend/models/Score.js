@@ -2,6 +2,10 @@ import { Schema, model } from "mongoose";
 
 const scoreSchema = new Schema(
     {
+        username: {
+      type: String,
+      required: true
+    },
         score: {
             type: Number,
             required: true,
